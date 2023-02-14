@@ -45,10 +45,12 @@ pipeline {
 
     stage ('Security Testing') {
       parallel {
-        stage('SAST - Polaris') {
+        stage('SAST - Coverity') {
           steps {
             sh '''
-              echo "Running Polaris Bridge"
+              echo "Running Coverity"
+              curl -fLsS ${COVERITY_URL}/api/v2/scans/downloads/cov_thin_client-linux64-${COVERITY_VERSION}.tar.gz | tar -C /tmp/ctc -xzf
+
 
             '''
           }
@@ -69,11 +71,9 @@ pipeline {
     stage ('IAST - Seeker') {
       steps {
         sh '''#!/bin/bash
-return 0
           if [ ! -z ${SERVER_WORKINGDIR} ]; then cd ${SERVER_WORKINGDIR}; fi
 
-#          sh -c "$( curl -k -X GET -fsSL --header 'Accept: application/x-sh' \"${SEEKER_SERVER_URL}/rest/api/latest/installers/agents/scripts/JAVA?osFamily=LINUX&downloadWith=curl&projectKey=${SEEKER_PROJECT_KEY}&webServer=TOMCAT&flavor=DEFAULT&agentName=&accessToken=\")"
-          sh -c "$( curl -k -X GET -fsSL --header 'Accept: application/x-sh' 'http://192.168.2.33:8080/rest/api/latest/installers/agents/scripts/JAVA?osFamily=LINUX&downloadWith=curl&projectKey=jhip53&webServer=TOMCAT&flavor=DEFAULT&agentName=&accessToken=')"
+          sh -c "$( curl -k -X GET -fsSL --header 'Accept: application/x-sh' \"${SEEKER_URL}/rest/api/latest/installers/agents/scripts/JAVA?osFamily=LINUX&downloadWith=curl&projectKey=${SEEKER_PROJECT_KEY}&webServer=TOMCAT&flavor=DEFAULT&agentName=&accessToken=\")"
 
           export SEEKER_PROJECT_VERSION=${VERSION}
           export SEEKER_AGENT_NAME=${AGENT}
@@ -83,15 +83,15 @@ return 0
           if [[ $serverMessage == ?(-)+([0-9]) ]]; then #Check if value passed back is numeric (PID) or string (Error message).
             echo "Running IAST Tests"
 
-            testRunID=$(curl -X 'POST' "${SEEKER_SERVER_URL}/rest/api/latest/testruns" -H 'accept: application/json' -H 'Content-Type: application/x-www-form-urlencoded' -H "Authorization: ${SEEKER_TOKEN}" -d "type=AUTO_TRIAGE&statusKey=FIXED&projectKey=${SEEKER_PROJECT_KEY}" | jq -r ".[]".key)
+            testRunID=$(curl -X 'POST' "${SEEKER_URL}/rest/api/latest/testruns" -H 'accept: application/json' -H 'Content-Type: application/x-www-form-urlencoded' -H "Authorization: ${SEEKER_TOKEN}" -d "type=AUTO_TRIAGE&statusKey=FIXED&projectKey=${SEEKER_PROJECT_KEY}" | jq -r ".[]".key)
             echo "Run ID is : "$testRunID
 
-            selenium-side-runner -c "browserName=firefox moz:firefoxOptions.args=[-headless]" --output-directory=/tmp ${WORKSPACE}/selenium/jHipster.side
+            #selenium-side-runner -c "browserName=firefox moz:firefoxOptions.args=[-headless]" --output-directory=/tmp ${WORKSPACE}/selenium/jHipster.side
 
             # Give Seeker some time to do it's stuff; API collation, testing etc.
             sleep ${SEEKER_RUN_TIME}
 
-            testResponse=$(curl -X 'PUT' "${SEEKER_SERVER_URL}/rest/api/latest/testruns/$testRunID/close" -H 'accept: application/json' -H 'Content-Type: application/x-www-form-urlencoded' -H "Authorization: ${SEEKER_TOKEN}" -d 'completed=true')
+            testResponse=$(curl -X 'PUT' "${SEEKER_URL}/rest/api/latest/testruns/$testRunID/close" -H 'accept: application/json' -H 'Content-Type: application/x-www-form-urlencoded' -H "Authorization: ${SEEKER_TOKEN}" -d 'completed=true')
             echo "Finished Testing. [$testResponse]"
 
             kill $serverMessage
