@@ -15,6 +15,7 @@ pipeline {
     SERVER_WORKINGDIR = ""
     SEEKER_RUN_TIME = 180
     SEEKER_PROJECT_KEY = 'jhip'
+    BUILD_CMD = 'mvn -B clean package -DskipTests'
   }
 
   stages{
@@ -26,7 +27,7 @@ pipeline {
 
     stage('Build') {
       steps {
-        sh 'mvn clean package -DskipTests'
+        sh "${BUILD_CMD}"
       }
     }
     stage('Set Up Environment') {
@@ -47,12 +48,15 @@ pipeline {
       parallel {
         stage('SAST - Coverity') {
           steps {
-            sh '''
-              echo "Running Coverity"
-              curl -fLsS ${COVERITY_URL}/api/v2/scans/downloads/cov_thin_client-linux64-${COVERITY_VERSION}.tar.gz | tar -C /tmp/ctc -xzf
-
-
-            '''
+            withCredentials([usernamePassword(credentialsId: 'coverity-commit-user', usernameVariable: 'COV_USER', passwordVariable: 'COVERITY_PASSPHRASE')]) {
+              sh """
+                rm -rf /tmp/ctc && mkdir /tmp/ctc
+                curl -fLsS $COVERITY_URL/api/v2/scans/downloads/cov_thin_client-linux64-${COVERITY_VERSION}.tar.gz | tar -C /tmp/ctc -xzf -
+                export COVERITY_NO_LOG_ENVIRONMENT_VARIABLES=1
+                COVERITY_CLI_CLOUD_ANALYSIS_ASYNC=false /tmp/ctc/bin/coverity scan -o analyze.location=connect \
+                    -o commit.connect.url=$COVERITY_URL -o commit.connect.stream=$PROJECT -- $BUILD_CMD
+              """
+            }
           }
         }
         stage ('SCA - Black Duck') {
