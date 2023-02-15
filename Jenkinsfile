@@ -23,8 +23,7 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: 'coverity-commit-user', usernameVariable: 'COV_USER', passwordVariable: 'COVERITY_PASSPHRASE')]) {
           sh """
-            curl --location --request GET $COVERITY_URL/api/v2/serverInfo/version --header 'Accept: application/json'
-exit
+            curl --location --request GET $COVERITY_URL/api/v2/serverInfo/version --header 'Accept: application/json' --user $COV_USER:$COVERITY_PASSPHRASE
           """
         }
       }
