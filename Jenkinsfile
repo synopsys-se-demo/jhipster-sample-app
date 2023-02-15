@@ -19,6 +19,16 @@ pipeline {
   }
 
   stages{
+    stage ('Test Testing') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'coverity-commit-user', usernameVariable: 'COV_USER', passwordVariable: 'COVERITY_PASSPHRASE')]) {
+          sh """
+            curl --location --request GET $COVERITY_URL/api/v2/serverInfo/version --header 'Accept: application/json'
+exit
+          """
+        }
+      }
+    }
     stage('NPM Install') {
       steps {
         sh 'npm install'
@@ -50,6 +60,9 @@ pipeline {
           steps {
             withCredentials([usernamePassword(credentialsId: 'coverity-commit-user', usernameVariable: 'COV_USER', passwordVariable: 'COVERITY_PASSPHRASE')]) {
               sh """
+                curl --location --request GET $COVERITY_URL/api/v2/serverInfo/version --header 'Accept: application/json'
+              
+              
                 rm -rf /tmp/ctc && mkdir /tmp/ctc
                 curl -fLsS $COVERITY_URL/api/v2/scans/downloads/cov_thin_client-linux64-${COVERITY_VERSION}.tar.gz | tar -C /tmp/ctc -xzf -
                 export COVERITY_NO_LOG_ENVIRONMENT_VARIABLES=1
