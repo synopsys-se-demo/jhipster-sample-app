@@ -21,10 +21,12 @@ pipeline {
 
   stages{
     stage ('Get Version') {
-      sh '''
-        cov_version=$(curl -k -s -X "GET" "$COVERITY_URL/api/v2/serverInfo/version", -H "accept: application/json" --user ${COVERITY_CREDENTIALS_USR}:${COVERITY_CREDENTIALS_PSW})|jq .externalVersion
-        echo $cov_version
-      '''
+      steps{
+        sh '''
+          cov_version=$(curl -k -s -X "GET" "$COVERITY_URL/api/v2/serverInfo/version", -H "accept: application/json" --user ${COVERITY_CREDENTIALS_USR}:${COVERITY_CREDENTIALS_PSW})|jq .externalVersion
+          echo $cov_version
+        '''
+      }
     }
 
     stage ('Test Testing') {
