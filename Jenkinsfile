@@ -22,7 +22,7 @@ pipeline {
   stages{
     stage ('Get Version') {
       sh """
-          cov_version=$(curl -k -s -X 'GET' "$COVERITY_URL/api/v2/serverInfo/version", -H 'accept: application/json' --user ${COVERITY_CREDENTIALS_USR}:${COVERITY_CREDENTIALS_PSW})|jq .externalVersion
+        cov_version=$(curl -k -s -X 'GET' "$COVERITY_URL/api/v2/serverInfo/version", -H 'accept: application/json' --user ${COVERITY_CREDENTIALS_USR}:${COVERITY_CREDENTIALS_PSW})|jq .externalVersion
         echo $cov_version
       """
     }
@@ -73,7 +73,7 @@ pipeline {
                 rm -rf /tmp/ctc && mkdir /tmp/ctc
                 curl -fLsS $COVERITY_URL/api/v2/scans/downloads/cov_thin_client-linux64-${COVERITY_VERSION}.tar.gz | tar -C /tmp/ctc -xzf -
                 export COVERITY_NO_LOG_ENVIRONMENT_VARIABLES=1
-                COVERITY_CLI_CLOUD_ANALYSIS_ASYNC=false /tmp/ctc/bin/coverity scan -o analyze.location=connect \
+                #COVERITY_CLI_CLOUD_ANALYSIS_ASYNC=false /tmp/ctc/bin/coverity scan -o analyze.location=connect \
                     -o commit.connect.url=$COVERITY_URL -o commit.connect.stream=$PROJECT -- $BUILD_CMD
               """
             }
@@ -85,7 +85,7 @@ pipeline {
               echo "Running BlackDuck"
               rm -fr /tmp/detect8.sh
               curl -s -L https://detect.synopsys.com/detect8.sh > /tmp/detect8.sh
-              bash /tmp/detect8.sh --blackduck.url="${BLACKDUCK_URL}" --blackduck.api.token="${BLACKDUCK_TOKEN}" --detect.project.name="${PROJECT}" --detect.project.version.name="${VERSION}" --blackduck.trust.cert=true
+              #bash /tmp/detect8.sh --blackduck.url="${BLACKDUCK_URL}" --blackduck.api.token="${BLACKDUCK_TOKEN}" --detect.project.name="${PROJECT}" --detect.project.version.name="${VERSION}" --blackduck.trust.cert=true
             '''
           }
         }
