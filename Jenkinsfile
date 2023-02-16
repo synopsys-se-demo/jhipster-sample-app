@@ -20,24 +20,15 @@ pipeline {
   }
 
   stages{
-    stage ('Get Version') {
-      steps{
-        sh '''
-          cov_version=$(curl -s --location --request GET $COVERITY_URL/api/v2/serverInfo/version --header 'Accept: application/json' --user ${COVERITY_CREDENTIALS_USR}:${COVERITY_CREDENTIALS_PSW}|jq .externalVersion)
-          echo $cov_version
-        '''
-      }
-    }
-
     stage('NPM Install') {
       steps {
-        sh '#npm install'
+        sh 'npm install'
       }
     }
 
     stage('Build') {
       steps {
-        sh "#${BUILD_CMD}"
+        sh "${BUILD_CMD}"
       }
     }
     stage('Set Up Environment') {
@@ -60,13 +51,12 @@ pipeline {
           steps {
             withCredentials([usernamePassword(credentialsId: 'coverity-commit-user', usernameVariable: 'COV_USER', passwordVariable: 'COVERITY_PASSPHRASE')]) {
               sh """
-                curl --location --request GET $COVERITY_URL/api/v2/serverInfo/version --header 'Accept: application/json'
-              
+                cov_version=$(curl -s --location --request GET $COVERITY_URL/api/v2/serverInfo/version --header 'Accept: application/json' --user ${COVERITY_CREDENTIALS_USR}:${COVERITY_CREDENTIALS_PSW}|jq .externalVersion)
               
                 rm -rf /tmp/ctc && mkdir /tmp/ctc
-                curl -fLsS $COVERITY_URL/api/v2/scans/downloads/cov_thin_client-linux64-${COVERITY_VERSION}.tar.gz | tar -C /tmp/ctc -xzf -
+                curl -fLsS $COVERITY_URL/api/v2/scans/downloads/cov_thin_client-linux64-$cov_version.tar.gz | tar -C /tmp/ctc -xzf -
                 export COVERITY_NO_LOG_ENVIRONMENT_VARIABLES=1
-                #COVERITY_CLI_CLOUD_ANALYSIS_ASYNC=false /tmp/ctc/bin/coverity scan -o analyze.location=connect \
+                COVERITY_CLI_CLOUD_ANALYSIS_ASYNC=false /tmp/ctc/bin/coverity scan -o analyze.location=connect \
                     -o commit.connect.url=$COVERITY_URL -o commit.connect.stream=$PROJECT -- $BUILD_CMD
               """
             }
@@ -78,7 +68,7 @@ pipeline {
               echo "Running BlackDuck"
               rm -fr /tmp/detect8.sh
               curl -s -L https://detect.synopsys.com/detect8.sh > /tmp/detect8.sh
-              #bash /tmp/detect8.sh --blackduck.url="${BLACKDUCK_URL}" --blackduck.api.token="${BLACKDUCK_TOKEN}" --detect.project.name="${PROJECT}" --detect.project.version.name="${VERSION}" --blackduck.trust.cert=true
+              bash /tmp/detect8.sh --blackduck.url="${BLACKDUCK_URL}" --blackduck.api.token="${BLACKDUCK_TOKEN}" --detect.project.name="${PROJECT}" --detect.project.version.name="${VERSION}" --blackduck.trust.cert=true
             '''
           }
         }
