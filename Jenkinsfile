@@ -23,21 +23,12 @@ pipeline {
     stage ('Get Version') {
       steps{
         sh '''
-          cov_version=$(curl --location --request GET $COVERITY_URL/api/v2/serverInfo/version --header 'Accept: application/json' --user ${COVERITY_CREDENTIALS_USR}:${COVERITY_CREDENTIALS_PSW})|jq .externalVersion
+          cov_version=$(curl -s --location --request GET $COVERITY_URL/api/v2/serverInfo/version --header 'Accept: application/json' --user ${COVERITY_CREDENTIALS_USR}:${COVERITY_CREDENTIALS_PSW}|jq .externalVersion)
           echo $cov_version
         '''
       }
     }
 
-    stage ('Test Testing') {
-      steps {
-        withCredentials([usernamePassword(credentialsId: 'coverity-commit-user', usernameVariable: 'COV_USER', passwordVariable: 'COVERITY_PASSPHRASE')]) {
-          sh """
-            curl --location --request GET $COVERITY_URL/api/v2/serverInfo/version --header 'Accept: application/json' --user $COV_USER:$COVERITY_PASSPHRASE
-          """
-        }
-      }
-    }
     stage('NPM Install') {
       steps {
         sh '#npm install'
