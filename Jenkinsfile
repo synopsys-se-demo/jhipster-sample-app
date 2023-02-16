@@ -23,7 +23,7 @@ pipeline {
     stage ('Get Version') {
       steps{
         sh '''
-          cov_version=$(curl -k -s -X "GET" "$COVERITY_URL/api/v2/serverInfo/version", -H "accept: application/json" --user ${COVERITY_CREDENTIALS_USR}:${COVERITY_CREDENTIALS_PSW})|jq .externalVersion
+          cov_version=$(curl --location --request GET $COVERITY_URL/api/v2/serverInfo/version --header 'Accept: application/json' --user ${COVERITY_CREDENTIALS_USR}:${COVERITY_CREDENTIALS_PSW})|jq .externalVersion
           echo $cov_version
         '''
       }
@@ -40,13 +40,13 @@ pipeline {
     }
     stage('NPM Install') {
       steps {
-        sh 'npm install'
+        sh '#npm install'
       }
     }
 
     stage('Build') {
       steps {
-        sh "${BUILD_CMD}"
+        sh "#${BUILD_CMD}"
       }
     }
     stage('Set Up Environment') {
